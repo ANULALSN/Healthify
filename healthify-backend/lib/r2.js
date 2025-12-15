@@ -12,15 +12,19 @@ const {
     R2_SECRET_ACCESS_KEY,
     R2_BUCKET_NAME,
     R2_PUBLIC_URL, // Optional: custom domain or public bucket URL
+    R2_ENDPOINT,
 } = process.env;
 
 // Check for required configuration
 const isConfigured =
-    R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY && R2_BUCKET_NAME;
+    (R2_ACCOUNT_ID || R2_ENDPOINT) &&
+    R2_ACCESS_KEY_ID &&
+    R2_SECRET_ACCESS_KEY &&
+    R2_BUCKET_NAME;
 
 if (!isConfigured) {
     console.warn(
-        '[R2] R2 bucket env vars not fully set; R2 uploads disabled. Required: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME'
+        '[R2] R2 bucket env vars not fully set; R2 uploads disabled. Required: (R2_ACCOUNT_ID OR R2_ENDPOINT), R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME'
     );
 }
 
@@ -28,7 +32,7 @@ if (!isConfigured) {
 const r2Client = isConfigured
     ? new S3Client({
         region: 'auto',
-        endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+        endpoint: R2_ENDPOINT || `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
         credentials: {
             accessKeyId: R2_ACCESS_KEY_ID,
             secretAccessKey: R2_SECRET_ACCESS_KEY,
@@ -63,9 +67,15 @@ async function uploadToR2(buffer, mimeType, folder = 'uploads') {
     await r2Client.send(command);
 
     // Generate URL
-    const url = R2_PUBLIC_URL
-        ? `${R2_PUBLIC_URL}/${key}`
-        : `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET_NAME}/${key}`;
+    let url;
+    if (R2_PUBLIC_URL) {
+        url = `${R2_PUBLIC_URL}/${key}`;
+    } else if (R2_ENDPOINT) {
+        // Extract base URL from endpoint for public access
+        url = `${R2_ENDPOINT}/${R2_BUCKET_NAME}/${key}`;
+    } else {
+        url = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET_NAME}/${key}`;
+    }
 
     return { url, key };
 }

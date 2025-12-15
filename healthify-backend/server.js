@@ -76,3 +76,5 @@ connectDB(process.env.MONGODB_URI)
     console.error('Failed to start server:', err);
     process.exit(1);
   });
+
+// Restart trigger (R2 update)
