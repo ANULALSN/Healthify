@@ -66,6 +66,7 @@ app.use('/api/user-medicines', userMedicinesRoutes);
 app.use('/api/exercise-bundles', exerciseBundlesRoutes);
 app.use('/api/workout-progress', workoutProgressRoutes);
 app.use('/api/health-metrics', healthMetricsRoutes);
+app.use('/api/health-assessment', require('./routes/healthAssessment'));
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 4000;
